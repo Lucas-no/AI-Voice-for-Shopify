@@ -1,9 +1,9 @@
 {
-  "name": "shopify-ai-tts",
+  "name": "ai-voice-for-shopify",
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "openai": "4.28.4",
-    "node-fetch": "3.3.2"
+    "openai": "^4.28.4"
   }
 }
+
