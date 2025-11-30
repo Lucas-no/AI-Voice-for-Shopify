@@ -1,7 +1,17 @@
 import OpenAI from "openai";
 
 export default async function handler(req, res) {
-  // Chỉ cho phép POST
+  // --- FIX CORS ---
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Preflight request
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  // -----------------
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -13,28 +23,23 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing text" });
     }
 
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const chosenVoice = voice || "alloy";
-
-    // Gọi OpenAI TTS realtime
-    const response = await client.audio.speech.create({
+    const mp3 = await client.audio.speech.create({
       model: "gpt-4o-mini-tts",
-      voice: chosenVoice,
-      input: text,
-      format: "mp3"
+      voice: voice || "alloy",
+      input: text
     });
 
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const audioBuffer = Buffer.from(await mp3.arrayBuffer());
 
     res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("Content-Length", buffer.length);
-    res.send(buffer);
+    res.setHeader("Cache-Control", "no-cache");
+
+    return res.status(200).send(audioBuffer);
 
   } catch (err) {
     console.error("TTS Error:", err);
-    res.status(500).json({ error: "TTS Generation Failed" });
+    return res.status(500).json({ error: "TTS Generation Failed", detail: err.message });
   }
 }
